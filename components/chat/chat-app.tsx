@@ -1,7 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Info, Send, Settings2, Square, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Send,
+  Settings2,
+  Square,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -10,6 +19,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { MessageList } from '@/components/chat/message-list';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import {
   SettingsPanel,
   type ParameterState,
@@ -63,12 +73,12 @@ export function ChatApp() {
   const [parameters, setParameters] = useState<ParameterState>({});
   const [systemPrompt, setSystemPrompt] = useState('');
   const [input, setInput] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const { messages, isStreaming, send, stop, clear } = useChat();
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/models')
@@ -86,10 +96,6 @@ export function ChatApp() {
       })
       .catch(() => setLoadError('Failed to load the model registry.'));
   }, []);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const selectedModel = useMemo(
     () => models.find((m) => m.modelId === selectedModelId),
@@ -139,7 +145,7 @@ export function ChatApp() {
   }
 
   return (
-    <div className="mx-auto flex h-dvh max-w-6xl gap-4 p-4">
+    <div className="mx-auto flex h-dvh w-full max-w-6xl gap-4 p-4">
       {/* Chat column */}
       <div className="flex min-w-0 flex-1 flex-col rounded-lg border">
         <header className="flex items-center justify-between border-b px-4 py-2.5">
@@ -149,18 +155,20 @@ export function ChatApp() {
               {selectedModel.displayName}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clear}
-            disabled={messages.length === 0}
-          >
-            <Trash2 className="size-4" /> Clear
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clear}
+              disabled={messages.length === 0}
+            >
+              <Trash2 className="size-4" /> Clear
+            </Button>
+          </div>
         </header>
 
         <MessageList messages={messages} isStreaming={isStreaming} />
-        <div ref={bottomRef} />
 
         <footer className="border-t p-3">
           <div className="flex items-end gap-2">
@@ -191,7 +199,26 @@ export function ChatApp() {
       </div>
 
       {/* Side panels */}
-      <aside className="hidden w-80 shrink-0 flex-col gap-4 overflow-y-auto md:flex">
+      <aside
+        className={`hidden shrink-0 flex-col gap-4 md:flex ${
+          sidebarOpen ? 'w-80 overflow-y-auto' : 'w-8'
+        }`}
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          className="size-8 shrink-0 self-start"
+          title={sidebarOpen ? 'Collapse panel' : 'Expand panel'}
+          onClick={() => setSidebarOpen((v) => !v)}
+        >
+          {sidebarOpen ? (
+            <ChevronRight className="size-4" />
+          ) : (
+            <ChevronLeft className="size-4" />
+          )}
+        </Button>
+        {sidebarOpen && (
+        <>
         <Collapsible
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
@@ -237,6 +264,8 @@ export function ChatApp() {
             <InfoPanel model={selectedModel} />
           </CollapsibleContent>
         </Collapsible>
+        </>
+        )}
       </aside>
     </div>
   );

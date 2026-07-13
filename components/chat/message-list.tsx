@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import { Check, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { UiMessage } from '@/lib/chat/use-chat';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +40,29 @@ function StopReasonNotice({ stopReason }: { stopReason?: string }) {
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+      title={copied ? 'Copied' : 'Copy reply'}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          // Clipboard unavailable (permissions/insecure context) — ignore.
+        }
+      }}
+    >
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+    </Button>
+  );
+}
+
 export function MessageList({
   messages,
   isStreaming,
@@ -44,6 +70,39 @@ export function MessageList({
   messages: UiMessage[];
   isStreaming: boolean;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(true);
+  const lastScrollTopRef = useRef(0);
+
+  // Follow the stream while pinned to the bottom. Unpin ONLY on an actual
+  // upward scroll (scrollTop decreased) — content growth leaves scrollTop
+  // unchanged and programmatic scrolls only move down, so streaming can
+  // never falsely unpin. Re-pin when the user returns near the bottom.
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrolledUp = el.scrollTop < lastScrollTopRef.current;
+    lastScrollTopRef.current = el.scrollTop;
+    if (scrolledUp) {
+      pinnedRef.current = false;
+    } else if (el.scrollHeight - el.scrollTop - el.clientHeight < 40) {
+      pinnedRef.current = true;
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !pinnedRef.current) return;
+    el.scrollTop = el.scrollHeight;
+    // Markdown/highlight re-layout can grow content after this commit;
+    // catch up once more on the next frame.
+    requestAnimationFrame(() => {
+      if (pinnedRef.current && scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    });
+  }, [messages]);
+
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
@@ -52,10 +111,15 @@ export function MessageList({
     );
   }
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4"
+    >
       {messages.map((message, i) => {
         const isUser = message.role === 'user';
         const isLast = i === messages.length - 1;
+        const streamingThis = isLast && isStreaming;
         return (
           <div
             key={i}
@@ -79,7 +143,7 @@ export function MessageList({
                         {message.text}
                       </ReactMarkdown>
                     </div>
-                  ) : isLast && isStreaming && !message.error ? (
+                  ) : streamingThis && !message.error ? (
                     <span className="animate-pulse text-muted-foreground">…</span>
                   ) : null}
                   {message.error && (
@@ -89,7 +153,12 @@ export function MessageList({
                     </div>
                   )}
                   <StopReasonNotice stopReason={message.stopReason} />
-                  <UsageFooter message={message} />
+                  <div className="flex items-end justify-between gap-2">
+                    <UsageFooter message={message} />
+                    {message.text && !streamingThis && (
+                      <CopyButton text={message.text} />
+                    )}
+                  </div>
                 </>
               )}
             </div>
