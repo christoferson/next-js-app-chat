@@ -19,6 +19,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { MessageList } from '@/components/chat/message-list';
+import { LeftSidebar, type MenuKey } from '@/components/nav/left-sidebar';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import {
   SettingsPanel,
@@ -73,6 +74,7 @@ export function ChatApp() {
   const [parameters, setParameters] = useState<ParameterState>({});
   const [systemPrompt, setSystemPrompt] = useState('');
   const [input, setInput] = useState('');
+  const [activeMenu, setActiveMenu] = useState<MenuKey>('chat');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(true);
@@ -145,12 +147,15 @@ export function ChatApp() {
   }
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-6xl gap-4 p-4">
+    <div className="mx-auto flex h-dvh w-full max-w-7xl gap-4 p-4">
+      {/* Menu sidebar */}
+      <LeftSidebar active={activeMenu} onSelect={setActiveMenu} />
+
       {/* Chat column */}
       <div className="flex min-w-0 flex-1 flex-col rounded-lg border">
         <header className="flex items-center justify-between border-b px-4 py-2.5">
           <div className="text-sm font-medium">
-            Bedrock Chat
+            Chat
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               {selectedModel.displayName}
             </span>
