@@ -53,6 +53,13 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         documentChat: true,
         toolUse: true,
       },
+      // Not in the prompt-caching user-guide table; support verified live
+      // 2026-07-14 (write 19743 → read 19743). Min tokens undocumented.
+      promptCaching: {
+        maxCheckpoints: 4,
+        ttls: ['5m'],
+        fields: ['system', 'messages', 'tools'],
+      },
     },
     notes: [
       'Claude 5-generation sampling: temperature/top_k rejected by Bedrock; top_p only ≥ 0.99 (verified live).',
@@ -106,6 +113,13 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         vision: true,
         documentChat: true,
         toolUse: true,
+      },
+      // Not in the prompt-caching user-guide table; support verified live
+      // 2026-07-14 (write 19743 → read 19743). Min tokens undocumented.
+      promptCaching: {
+        maxCheckpoints: 4,
+        ttls: ['5m'],
+        fields: ['system', 'messages', 'tools'],
       },
     },
     notes: [
@@ -161,6 +175,13 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         vision: true,
         documentChat: true,
         toolUse: true,
+      },
+      // Not in the prompt-caching user-guide table; support verified live
+      // 2026-07-14 (write 19743 → read 19743). Min tokens undocumented.
+      promptCaching: {
+        maxCheckpoints: 4,
+        ttls: ['5m'],
+        fields: ['system', 'messages', 'tools'],
       },
     },
     notes: [
@@ -235,6 +256,14 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         documentChat: true,
         toolUse: true,
       },
+      // aws/docs/bedrock-runtime/prompt-caching.md (user-guide table row
+      // anthropic.claude-opus-4-6-v1). Verified live 2026-07-14.
+      promptCaching: {
+        minTokensPerCheckpoint: 4096,
+        maxCheckpoints: 4,
+        ttls: ['5m'],
+        fields: ['system', 'messages', 'tools'],
+      },
     },
     notes: [
       'temperature and topP cannot both be specified — Bedrock returns a validation error (verified live).',
@@ -308,6 +337,14 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         documentChat: true,
         toolUse: true,
       },
+      // Guide documents automatic Nova caching + recommends explicit opt-in,
+      // but publishes no Converse table row. Explicit cachePoint verified
+      // live 2026-07-14 (write 10544 → read 10544). Min tokens undocumented.
+      promptCaching: {
+        maxCheckpoints: 4,
+        ttls: ['5m'],
+        fields: ['system', 'messages'],
+      },
     },
     notes: [
       'Nova topK is passed nested: additionalModelRequestFields.inferenceConfig.topK.',
@@ -374,6 +411,7 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
       'AWS docs publish no native parameter ranges for this model — only base Converse parameters are exposed; top_k is not exposed (no documented additionalModelRequestFields contract).',
       'System-prompt support not explicitly documented for Converse — verified live before relying on it.',
       'No geo/global inference profile — in-region only (us-east-1 supported).',
+      'Prompt caching NOT supported — cachePoint rejected by Bedrock (verified live 2026-07-14).',
     ],
   },
   {
@@ -436,6 +474,7 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
       'Stream deltas may carry reasoningContent instead of text — the adapter must not assume delta.text exists.',
       'No documented temperature/topP defaults for this variant — omitted from requests unless set.',
       'No geo/global inference profile — in-region only (us-east-1 supported).',
+      'Prompt caching NOT supported — cachePoint rejected by Bedrock (verified live 2026-07-14).',
     ],
   },
 ];

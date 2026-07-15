@@ -7,6 +7,8 @@ export interface UsageInfo {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+  cacheReadInputTokens?: number;
+  cacheWriteInputTokens?: number;
   latencyMs?: number;
 }
 
@@ -22,6 +24,7 @@ export interface SendOptions {
   modelId: string;
   system?: string;
   parameters: Record<string, number | string[]>;
+  cache?: boolean;
 }
 
 export function useChat() {
@@ -80,6 +83,7 @@ export function useChat() {
             system: options.system || undefined,
             parameters: options.parameters,
             messages: history,
+            cache: options.cache || undefined,
           }),
         });
 

@@ -18,6 +18,9 @@ export type ChatStreamEvent =
         inputTokens?: number;
         outputTokens?: number;
         totalTokens?: number;
+        /** prompt caching: inputTokens counts only NON-cached tokens */
+        cacheReadInputTokens?: number;
+        cacheWriteInputTokens?: number;
       };
       latencyMs?: number;
     }

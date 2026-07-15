@@ -73,6 +73,7 @@ export function ChatApp() {
   const [selectedModelId, setSelectedModelId] = useState('');
   const [parameters, setParameters] = useState<ParameterState>({});
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [cacheEnabled, setCacheEnabled] = useState(true);
   const [input, setInput] = useState('');
   const [activeMenu, setActiveMenu] = useState<MenuKey>('chat');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -128,8 +129,17 @@ export function ChatApp() {
         ? systemPrompt.trim() || undefined
         : undefined,
       parameters: cleanParameters,
+      cache: cacheEnabled && !!selectedModel.capabilities.promptCaching,
     });
-  }, [input, isStreaming, selectedModel, parameters, systemPrompt, send]);
+  }, [
+    input,
+    isStreaming,
+    selectedModel,
+    parameters,
+    systemPrompt,
+    cacheEnabled,
+    send,
+  ]);
 
   if (loadError) {
     return (
@@ -248,6 +258,8 @@ export function ChatApp() {
               }
               systemPrompt={systemPrompt}
               onChangeSystemPrompt={setSystemPrompt}
+              cacheEnabled={cacheEnabled}
+              onChangeCacheEnabled={setCacheEnabled}
             />
           </CollapsibleContent>
         </Collapsible>

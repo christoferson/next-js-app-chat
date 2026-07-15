@@ -90,6 +90,8 @@ export const chatRequestSchema = z.object({
   system: z.string().optional(),
   parameters: z.record(z.string(), z.unknown()).optional(),
   messages: z.array(messageSchema).min(1),
+  /** request prompt caching — applied only if the registry declares support */
+  cache: z.boolean().optional(),
 });
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;

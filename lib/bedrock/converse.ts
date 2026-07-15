@@ -25,17 +25,31 @@ function setNested(
   cursor[keys[keys.length - 1]] = value;
 }
 
+const CACHE_POINT = { cachePoint: { type: 'default' as const } };
+
 /**
  * Route each validated parameter to inferenceConfig or
  * additionalModelRequestFields per its registry spec (target/fieldName).
  * Params absent from the model's inference map never reach this function.
+ *
+ * Prompt caching (aws/docs/bedrock-runtime/prompt-caching.md): when enabled
+ * AND the registry declares promptCaching, cachePoint blocks are appended to
+ * the sections the model supports — end of system, end of the latest user
+ * message. Anthropic's simplified cache management looks back ~20 content
+ * blocks from a checkpoint, so this single moving checkpoint per section
+ * yields hits on each successive turn. Below the model's min token count the
+ * request still succeeds (prefix simply isn't cached), so this is always safe.
  */
 export function buildConverseRequest(
   definition: ModelDefinition,
   messages: ChatMessage[],
   parameters: ValidatedParameters,
-  system?: string
+  system?: string,
+  options?: { cache?: boolean }
 ): ConverseStreamCommandInput {
+  const caching = options?.cache
+    ? definition.capabilities.promptCaching
+    : undefined;
   const inferenceConfig: Record<string, unknown> = {};
   const additionalFields: Record<string, unknown> = {};
 
@@ -53,14 +67,21 @@ export function buildConverseRequest(
     }
   }
 
+  const lastUserIndex = messages.reduce(
+    (acc, m, i) => (m.role === 'user' ? i : acc),
+    -1
+  );
+  const cacheMessages = caching?.fields.includes('messages') ?? false;
+
   const request: ConverseStreamCommandInput = {
     modelId: definition.modelId,
-    messages: messages.map(
-      (m): Message => ({
-        role: m.role,
-        content: m.content.map((c): ContentBlock => ({ text: c.text })),
-      })
-    ),
+    messages: messages.map((m, i): Message => {
+      const content = m.content.map((c): ContentBlock => ({ text: c.text }));
+      if (cacheMessages && i === lastUserIndex) {
+        content.push(CACHE_POINT);
+      }
+      return { role: m.role, content };
+    }),
   };
   if (Object.keys(inferenceConfig).length > 0) {
     request.inferenceConfig = inferenceConfig;
@@ -69,7 +90,9 @@ export function buildConverseRequest(
     request.additionalModelRequestFields = additionalFields as never;
   }
   if (system && definition.capabilities.features.systemPrompt) {
-    request.system = [{ text: system }];
+    request.system = caching?.fields.includes('system')
+      ? [{ text: system }, CACHE_POINT]
+      : [{ text: system }];
   }
   return request;
 }
@@ -124,6 +147,9 @@ export async function* adaptConverseStream(
               inputTokens: event.metadata.usage.inputTokens,
               outputTokens: event.metadata.usage.outputTokens,
               totalTokens: event.metadata.usage.totalTokens,
+              cacheReadInputTokens: event.metadata.usage.cacheReadInputTokens,
+              cacheWriteInputTokens:
+                event.metadata.usage.cacheWriteInputTokens,
             }
           : undefined,
         latencyMs: event.metadata.metrics?.latencyMs,

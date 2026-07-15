@@ -26,6 +26,10 @@ function UsageFooter({ message }: { message: UiMessage }) {
     <div className="mt-1.5 text-xs text-muted-foreground">
       {u.inputTokens ?? '–'} in · {u.outputTokens ?? '–'} out ·{' '}
       {u.totalTokens ?? '–'} total
+      {u.cacheReadInputTokens ? ` · ${u.cacheReadInputTokens} cache read` : ''}
+      {u.cacheWriteInputTokens
+        ? ` · ${u.cacheWriteInputTokens} cache write`
+        : ''}
       {u.latencyMs !== undefined ? ` · ${(u.latencyMs / 1000).toFixed(2)}s` : ''}
     </div>
   );

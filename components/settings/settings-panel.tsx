@@ -27,6 +27,8 @@ interface Props {
   onChangeParameter: (key: string, value: ParameterValue) => void;
   systemPrompt: string;
   onChangeSystemPrompt: (value: string) => void;
+  cacheEnabled: boolean;
+  onChangeCacheEnabled: (value: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -37,9 +39,12 @@ export function SettingsPanel({
   onChangeParameter,
   systemPrompt,
   onChangeSystemPrompt,
+  cacheEnabled,
+  onChangeCacheEnabled,
 }: Props) {
   const inference = selectedModel.capabilities.inference;
   const systemSupported = selectedModel.capabilities.features.systemPrompt;
+  const caching = selectedModel.capabilities.promptCaching;
 
   return (
     <div className="space-y-5">
@@ -90,6 +95,27 @@ export function SettingsPanel({
             and nothing is sent.
           </p>
         )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="prompt-caching">Prompt Caching</Label>
+          <input
+            id="prompt-caching"
+            type="checkbox"
+            className="size-4 accent-primary"
+            checked={caching ? cacheEnabled : false}
+            disabled={!caching}
+            onChange={(e) => onChangeCacheEnabled(e.target.checked)}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {caching
+            ? 'Caches the system prompt and conversation prefix to cut latency and input cost on follow-up turns.'
+            : 'This model does not support prompt caching — nothing is sent.'}
+        </p>
       </div>
 
       <Separator />

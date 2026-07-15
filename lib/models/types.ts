@@ -37,6 +37,22 @@ export interface FeatureCapabilities {
   toolUse: boolean;
 }
 
+export type CacheTtl = '5m' | '1h';
+export type CacheCheckpointField = 'system' | 'messages' | 'tools';
+
+// GROUP 3 — prompt caching: presence of the block = supported.
+// Values sourced from aws/docs/bedrock-runtime/prompt-caching.md.
+export interface PromptCachingCapability {
+  /** Minimum CUMULATIVE tokens (tools → system → messages) per checkpoint;
+   *  below this the request succeeds but the prefix is not cached.
+   *  Omitted when AWS docs don't publish a value for the model. */
+  minTokensPerCheckpoint?: number;
+  maxCheckpoints: number;
+  ttls: CacheTtl[];
+  /** request sections that accept cachePoint blocks */
+  fields: CacheCheckpointField[];
+}
+
 export interface ModelDefinition {
   modelId: string;
   /** informational only — NEVER branched on */
@@ -49,6 +65,7 @@ export interface ModelDefinition {
   capabilities: {
     inference: InferenceCapabilities;
     features: FeatureCapabilities;
+    promptCaching?: PromptCachingCapability;
   };
   /** quirks (mutual exclusivity, format issues, unverified data) */
   notes?: string[];
@@ -66,6 +83,10 @@ export function supportsFeature(
   k: keyof FeatureCapabilities
 ): boolean {
   return m.capabilities.features[k];
+}
+
+export function supportsPromptCaching(m: ModelDefinition): boolean {
+  return m.capabilities.promptCaching !== undefined;
 }
 
 export function getParamSpec(

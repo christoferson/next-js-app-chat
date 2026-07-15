@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         .join('; ')
     );
   }
-  const { modelId, system, parameters, messages } = parsedBody.data;
+  const { modelId, system, parameters, messages, cache } = parsedBody.data;
 
   const definition = getModelDefinition(modelId);
   if (!definition) {
@@ -70,7 +70,8 @@ export async function POST(request: Request) {
     definition,
     messages,
     validated.parameters!,
-    system
+    system,
+    { cache }
   );
   if (process.env.NODE_ENV === 'development') {
     console.log(
@@ -113,6 +114,8 @@ export async function POST(request: Request) {
               inputTokens: event.usage.inputTokens,
               outputTokens: event.usage.outputTokens,
               totalTokens: event.usage.totalTokens,
+              cacheReadInputTokens: event.usage.cacheReadInputTokens,
+              cacheWriteInputTokens: event.usage.cacheWriteInputTokens,
               latencyMs: event.latencyMs,
             });
           }

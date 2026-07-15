@@ -32,6 +32,16 @@ export function InfoPanel({ model }: { model: ClientModel }) {
             {label}
           </Badge>
         ))}
+        <Badge
+          variant={model.capabilities.promptCaching ? 'default' : 'outline'}
+          className={
+            model.capabilities.promptCaching
+              ? ''
+              : 'text-muted-foreground line-through'
+          }
+        >
+          Caching
+        </Badge>
       </div>
       {model.notes && model.notes.length > 0 && (
         <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
